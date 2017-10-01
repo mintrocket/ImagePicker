@@ -142,7 +142,7 @@ class CameraView: UIViewController, CLLocationManagerDelegate, CameraManDelegate
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
 
-    previewLayer?.connection.videoOrientation = .portrait
+    previewLayer?.connection.videoOrientation = Helper.videoOrientation()
     locationManager?.startUpdatingLocation()
   }
 
@@ -165,6 +165,21 @@ class CameraView: UIViewController, CLLocationManagerDelegate, CameraManDelegate
     previewLayer = layer
   }
 
+    private func updatePreviewLayer(layer: AVCaptureConnection, orientation: AVCaptureVideoOrientation) {
+        if orientation == .portrait {
+            if UIApplication.shared.statusBarOrientation == .landscapeRight {
+                layer.videoOrientation = .landscapeRight
+            } else {
+                layer.videoOrientation = .landscapeLeft
+            }
+
+        } else {
+            layer.videoOrientation = orientation
+        }
+
+        previewLayer?.frame = UIScreen.main.bounds
+    }
+
   // MARK: - Layout
 
   override func viewDidLayoutSubviews() {
@@ -181,6 +196,40 @@ class CameraView: UIViewController, CLLocationManagerDelegate, CameraManDelegate
     blurView.frame = view.bounds
     containerView.frame = view.bounds
     capturedImageView.frame = view.bounds
+
+    if let connection =  self.previewLayer?.connection  {
+
+        let currentDevice: UIDevice = UIDevice.current
+
+        let orientation: UIDeviceOrientation = currentDevice.orientation
+
+        let previewLayerConnection : AVCaptureConnection = connection
+
+        if previewLayerConnection.isVideoOrientationSupported {
+
+            switch (orientation) {
+            case .portrait: updatePreviewLayer(layer: previewLayerConnection, orientation: .portrait)
+
+                break
+
+            case .landscapeRight: updatePreviewLayer(layer: previewLayerConnection, orientation: .landscapeLeft)
+
+                break
+
+            case .landscapeLeft: updatePreviewLayer(layer: previewLayerConnection, orientation: .landscapeRight)
+
+                break
+
+            case .portraitUpsideDown: updatePreviewLayer(layer: previewLayerConnection, orientation: .portraitUpsideDown)
+
+                break
+
+            default: updatePreviewLayer(layer: previewLayerConnection, orientation: .portrait)
+
+                break
+            }
+        }
+    }
   }
 
   // MARK: - Actions
